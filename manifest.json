@@ -1,0 +1,22 @@
+{
+  "name": "Arcade Maintenance",
+  "short_name": "ArcadeMaint",
+  "description": "Arcade maintenance log and tracking system",
+  "start_url": "/?page=page1",
+  "display": "standalone",
+  "background_color": "#f3f4f6",
+  "theme_color": "#009688",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23009688' rx='20' width='100' height='100'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='white'>🎮</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "en-US",
+  "scope": "/",
+  "prefer_related_applications": false
+}

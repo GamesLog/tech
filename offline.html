@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - Arcade Maintenance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --sat: env(safe-area-inset-top);
+      --sab: env(safe-area-inset-bottom);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="text-center p-8">
+    <div class="inline-block p-8 bg-white rounded-2xl shadow-lg max-w-md">
+      <i class="fas fa-wifi text-5xl text-gray-400 mb-4"></i>
+      <h2 class="text-xl font-semibold text-gray-800 mb-2">You're Offline</h2>
+      <p class="text-gray-500 mb-6">Please check your internet connection and try again.</p>
+      <button onclick="window.location.reload()" class="bg-[#009688] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#007575] transition-colors">
+        <i class="fas fa-redo mr-2"></i>Try Again
+      </button>
+    </div>
+  </div>
+</body>
+</html>
