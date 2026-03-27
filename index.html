@@ -15,66 +15,24 @@
       --sat: env(safe-area-inset-top);
       --sab: env(safe-area-inset-bottom);
     }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
       height: 100%;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-
     body {
       display: flex;
       flex-direction: column;
       padding-top: max(0px, var(--sat));
       padding-bottom: var(--sab);
     }
-
     /* Active nav button */
     .nav-btn.active {
       background-color: #009688 !important;
       color: white !important;
     }
-
-    /* Iframe container fills remaining space */
-    #iframeContainer {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #iframeContainer iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-
-    /* Loading overlay */
-    #loadingOverlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f3f4f6;
-      z-index: 10;
-      transition: opacity 0.3s ease;
-    }
-
-    #loadingOverlay.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .loading-spinner {
-      animation: spin 1s linear infinite;
-    }
-
+    .loading-spinner { animation: spin 1s linear infinite; }
     @keyframes spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
@@ -106,109 +64,33 @@
     </div>
   </header>
 
-  <!-- Iframe Container -->
-  <div id="iframeContainer">
-    <!-- Loading overlay shown while iframe loads -->
-    <div id="loadingOverlay">
-      <div class="text-center">
-        <i class="fas fa-circle-notch text-5xl text-[#009688] loading-spinner mb-4 block"></i>
-        <h2 class="text-xl font-semibold text-gray-800 mb-2">Loading Arcade Maintenance...</h2>
-        <p class="text-gray-500">Please wait while the app loads</p>
-      </div>
+  <!-- Main Content Container -->
+  <div id="mainContainer" class="flex-1 relative overflow-hidden bg-gray-50">
+    
+    <!-- 1. Login UI (Hidden by default) -->
+    <div id="loginOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-30 hidden">
+      <i class="fas fa-lock text-4xl text-gray-400 mb-4"></i>
+      <h2 class="text-xl font-bold text-gray-800 mb-2">Technician Dashboard Secure Access</h2>
+      <p class="text-gray-500 mb-6">Please authenticate with JumpCloud to view this tool.</p>
+      <button onclick="openAuthPopup()" class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg shadow transition-colors">
+        Log In via SSO
+      </button>
     </div>
 
-<!-- Container for the App -->
-<div id="app-container" style="width: 100%; height: 800px; border: 1px solid #ccc; border-radius: 8px; position: relative; overflow: hidden;">
-  
-  <!-- 1. The Login UI (Shown if user needs to authenticate) -->
-  <div id="login-ui" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #f9fafb;">
-    <h2 style="font-family: sans-serif; color: #374151;">Technician Dashboard Secure Access</h2>
-    <p style="font-family: sans-serif; color: #6b7280; margin-bottom: 20px;">Please authenticate with JumpCloud to view this tool.</p>
-    <button onclick="openAuthPopup()" style="padding: 12px 24px; background-color: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold;">
-      Log In via SSO
-    </button>
+    <!-- 2. Loading UI (Visible on start and during page changes) -->
+    <div id="loadingOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-20">
+      <i class="fas fa-circle-notch text-5xl text-[#009688] loading-spinner mb-4"></i>
+      <h2 class="text-xl font-semibold text-gray-800 mb-2" id="loadingText">Verifying secure session...</h2>
+    </div>
+
+    <!-- 3. The Iframe -->
+    <iframe id="appFrame" class="w-full h-full border-none hidden z-10 relative"></iframe>
   </div>
 
-  <!-- 2. The Loading Spinner -->
-  <div id="loading-ui" style="display: flex; align-items: center; justify-content: center; height: 100%; font-family: sans-serif; color: #6b7280;">
-    Verifying session...
-  </div>
-
-  <!-- 3. The Actual Iframe (Hidden until authenticated) -->
-  <iframe id="dashboard-iframe" style="display: none; width: 100%; height: 100%; border: none;"></iframe>
-</div>
-
-<script>
-  // REPLACE WITH YOUR ACTUAL DEPLOYED WEB APP URL
-  const GAS_URL = "https://script.google.com/a/macros/fegllc.com/s/AKfycby2RYKFLD8bNYbTv-GmfCCcX10BP6ezRfI_FzKdSFZ9baw2DbfWiChAIqskxwZy4RQf/exec";
-  
-  const loginUi = document.getElementById('login-ui');
-  const loadingUi = document.getElementById('loading-ui');
-  const iframe = document.getElementById('dashboard-iframe');
-  
-  let authTimeout;
-
-  // Listen for the success message from the GAS script (either from popup or hidden iframe)
-  window.addEventListener('message', function(event) {
-    if (event.data === 'auth_success') {
-      clearTimeout(authTimeout); // Stop the timeout
-      showDashboard();
-    }
-  });
-
-  // Function to open the JumpCloud/Google login in a popup
-  function openAuthPopup() {
-    // Open the authCheck page in a popup
-    const popupWidth = 500;
-    const popupHeight = 600;
-    const left = (window.innerWidth / 2) - (popupWidth / 2);
-    const top = (window.innerHeight / 2) - (popupHeight / 2);
+  <script>
+    // --- CONFIGURATION ---
+    const GAS_URL = "https://script.google.com/a/macros/fegllc.com/s/AKfycby2RYKFLD8bNYbTv-GmfCCcX10BP6ezRfI_FzKdSFZ9baw2DbfWiChAIqskxwZy4RQf/exec";
     
-    window.open(
-      `${GAS_URL}?page=authCheck`, 
-      'SSOLogin', 
-      `width=${popupWidth},height=${popupHeight},top=${top},left=${left}`
-    );
-  }
-
-  // Function to reveal the iframe once we know they are logged in
-  function showDashboard() {
-    loginUi.style.display = 'none';
-    loadingUi.style.display = 'none';
-    iframe.style.display = 'block';
-    
-    // Only set the src once we know we won't hit a JumpCloud block
-    if (!iframe.src) {
-      iframe.src = `${GAS_URL}?page=dashboard`;
-    }
-  }
-
-  // INITIAL CHECK: Try to load the authCheck invisibly in the iframe.
-  // If we don't get a response in 3 seconds, assume JumpCloud blocked it.
-  function checkInitialAuth() {
-    loginUi.style.display = 'none';
-    iframe.style.display = 'none';
-    loadingUi.style.display = 'flex';
-
-    // Create a temporary hidden iframe to check auth
-    const pingFrame = document.createElement('iframe');
-    pingFrame.style.display = 'none';
-    pingFrame.src = `${GAS_URL}?page=authCheck`;
-    document.body.appendChild(pingFrame);
-
-    // If we don't hear 'auth_success' in 3.5 seconds, show the login button
-    authTimeout = setTimeout(() => {
-      loadingUi.style.display = 'none';
-      loginUi.style.display = 'flex';
-      pingFrame.remove(); // Cleanup
-    }, 3500);
-  }
-
-  // Run the check when the page loads
-  checkInitialAuth();
-</script>
-
-    // Map GitHub Pages paths to GAS page parameters
     const PATH_TO_PAGE = {
       '/': 'page1',
       '/index.html': 'page1',
@@ -217,20 +99,61 @@
       '/customize': 'page3'
     };
 
+    // --- DOM ELEMENTS ---
     const iframe = document.getElementById('appFrame');
     const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingText = document.getElementById('loadingText');
+    const loginOverlay = document.getElementById('loginOverlay');
+    
+    // --- STATE ---
+    let authTimeout;
+    let isAuthenticated = false;
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentPage = urlParams.get('page') || PATH_TO_PAGE[window.location.pathname] || 'page1';
 
-    // Get page from URL path
-    function getPageFromPath() {
-      const path = window.location.pathname;
-      return PATH_TO_PAGE[path] || 'page1';
+    // --- AUTHENTICATION LOGIC ---
+
+    // 1. Check if user is already logged in (invisible ping)
+    function checkInitialAuth() {
+      const pingFrame = document.createElement('iframe');
+      pingFrame.style.display = 'none';
+      pingFrame.src = `${GAS_URL}?page=authCheck`;
+      document.body.appendChild(pingFrame);
+
+      // If no response in 3.5s, assume JumpCloud blocked it -> Show Login
+      authTimeout = setTimeout(() => {
+        loadingOverlay.classList.add('hidden');
+        loginOverlay.classList.remove('hidden');
+        pingFrame.remove(); 
+      }, 3500);
     }
 
-    // Get page parameter from URL (for backward compatibility)
-    const urlParams = new URLSearchParams(window.location.search);
-    let currentPage = urlParams.get('page') || getPageFromPath();
+    // 2. Open Popup for Login
+    function openAuthPopup() {
+      const popupWidth = 500;
+      const popupHeight = 600;
+      const left = (window.innerWidth / 2) - (popupWidth / 2);
+      const top = (window.innerHeight / 2) - (popupHeight / 2);
+      
+      window.open(
+        `${GAS_URL}?page=authCheck`, 
+        'SSOLogin', 
+        `width=${popupWidth},height=${popupHeight},top=${top},left=${left}`
+      );
+    }
 
-    // Update active nav button
+    // 3. Listen for success message from GAS (Popup OR Ping)
+    window.addEventListener('message', function(event) {
+      if (event.data === 'auth_success') {
+        clearTimeout(authTimeout); // Stop the timeout
+        isAuthenticated = true;
+        loginOverlay.classList.add('hidden');
+        loadPage(currentPage); // Actually load the requested page now
+      }
+    });
+
+    // --- NAVIGATION LOGIC ---
+
     function updateNav() {
       document.querySelectorAll('.nav-btn').forEach(btn => {
         if (btn.dataset.page === currentPage) {
@@ -241,53 +164,51 @@
       });
     }
 
-    // Load a page into the iframe
     function loadPage(pageName) {
-      // Show loading overlay
-      loadingOverlay.classList.remove('hidden');
+      if (!isAuthenticated) return; // Don't try to load if not logged in
 
-      // Set iframe src to the GAS URL with the page parameter
+      loadingText.textContent = "Loading Arcade Maintenance...";
+      loadingOverlay.classList.remove('hidden');
+      iframe.classList.add('hidden');
+      
       iframe.src = GAS_URL + '?page=' + pageName;
     }
 
     // Hide loading overlay when iframe finishes loading
     iframe.addEventListener('load', function() {
-      loadingOverlay.classList.add('hidden');
+      if (isAuthenticated && iframe.src.includes('page=')) {
+        loadingOverlay.classList.add('hidden');
+        iframe.classList.remove('hidden');
+      }
     });
 
-    // Navigation function - loads page in iframe instead of redirecting
     function navigateTo(pageName) {
       currentPage = pageName;
       updateNav();
 
-      // Update browser URL without reload
       const newUrl = window.location.pathname + '?page=' + pageName;
       window.history.pushState({ page: pageName }, '', newUrl);
 
-      // Load in iframe
       loadPage(pageName);
     }
 
-    // Handle browser back/forward
     window.addEventListener('popstate', function(event) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const page = urlParams.get('page') || 'page1';
-      currentPage = page;
+      const params = new URLSearchParams(window.location.search);
+      currentPage = params.get('page') || 'page1';
       updateNav();
-      loadPage(page);
+      loadPage(currentPage);
     });
 
-    // Initialize on page load
+    // --- INITIALIZATION ---
     document.addEventListener('DOMContentLoaded', function() {
       updateNav();
+      
+      // Start the Auth Check flow
+      checkInitialAuth();
 
-      // Register service worker for PWA
+      // PWA Service Worker
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then((registration) => {
-            console.log('PWA: Service Worker registered:', registration.scope);
-
-            // Check for updates
+        navigator.serviceWorker.register('/service-worker.js').then((registration) => {
             registration.addEventListener('updatefound', () => {
               const newWorker = registration.installing;
               newWorker.addEventListener('statechange', () => {
@@ -298,14 +219,8 @@
                 }
               });
             });
-          })
-          .catch((error) => {
-            console.log('PWA: Service Worker registration failed:', error);
-          });
+          }).catch(console.error);
       }
-
-      // Load the current page into the iframe
-      loadPage(currentPage);
     });
   </script>
 </body>
