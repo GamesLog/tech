@@ -87,7 +87,7 @@
     <iframe id="appFrame" class="w-full h-full border-none hidden z-10 relative"></iframe>
   </div>
 
-  <script>
+<script>
     // --- CONFIGURATION ---
     const GAS_URL = "https://script.google.com/a/macros/fegllc.com/s/AKfycby2RYKFLD8bNYbTv-GmfCCcX10BP6ezRfI_FzKdSFZ9baw2DbfWiChAIqskxwZy4RQf/exec";
     
@@ -121,6 +121,7 @@
       document.body.appendChild(pingFrame);
 
       // If no response in 3.5s, assume JumpCloud blocked it -> Show Login
+      // (Note: The red CSP error in the console here is EXPECTED and NORMAL)
       authTimeout = setTimeout(() => {
         loadingOverlay.classList.add('hidden');
         loginOverlay.classList.remove('hidden');
@@ -128,29 +129,42 @@
       }, 3500);
     }
 
-    // 2. Open Popup for Login
+    // 2. Listen for the invisible ping succeeding (if they are already logged in)
+    window.addEventListener('message', function(event) {
+      if (event.data === 'auth_success') {
+        clearTimeout(authTimeout);
+        proceedToApp();
+      }
+    });
+
+    // 3. Open Popup for Login & Watch it close
     function openAuthPopup() {
       const popupWidth = 500;
       const popupHeight = 600;
       const left = (window.innerWidth / 2) - (popupWidth / 2);
       const top = (window.innerHeight / 2) - (popupHeight / 2);
       
-      window.open(
+      const authWindow = window.open(
         `${GAS_URL}?page=authCheck`, 
         'SSOLogin', 
         `width=${popupWidth},height=${popupHeight},top=${top},left=${left}`
       );
+
+      // Watch the popup window. When it closes, we assume authentication was successful.
+      const pollTimer = setInterval(() => {
+        if (authWindow && authWindow.closed) {
+          clearInterval(pollTimer);
+          proceedToApp();
+        }
+      }, 500);
     }
 
-    // 3. Listen for success message from GAS (Popup OR Ping)
-    window.addEventListener('message', function(event) {
-      if (event.data === 'auth_success') {
-        clearTimeout(authTimeout); // Stop the timeout
-        isAuthenticated = true;
-        loginOverlay.classList.add('hidden');
-        loadPage(currentPage); // Actually load the requested page now
-      }
-    });
+    // 4. Triggered when auth is successful
+    function proceedToApp() {
+      isAuthenticated = true;
+      loginOverlay.classList.add('hidden');
+      loadPage(currentPage);
+    }
 
     // --- NAVIGATION LOGIC ---
 
@@ -206,7 +220,7 @@
       // Start the Auth Check flow
       checkInitialAuth();
 
-      // PWA Service Worker
+      // PWA Service Worker (Errors here are harmless to the auth flow)
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/service-worker.js').then((registration) => {
             registration.addEventListener('updatefound', () => {
