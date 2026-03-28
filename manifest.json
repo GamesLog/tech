@@ -1,6 +1,6 @@
 {
   "name": "Arcade Maintenance",
-  "short_name": "ArcadeMaint",
+  "short_name": "TechReport",
   "description": "Arcade maintenance log and tracking system",
   "start_url": "/?page=page1",
   "id": "/",
