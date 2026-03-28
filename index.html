@@ -17,6 +17,7 @@
   <title>Arcade Maintenance</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/mobile-arcade.css">
   <style>
     :root {
       --sat: env(safe-area-inset-top);
@@ -34,7 +35,6 @@
       padding-top: max(0px, var(--sat));
       padding-bottom: var(--sab);
     }
-    /* Active nav button */
     .nav-btn.active {
       background-color: #009688 !important;
       color: white !important;
@@ -44,9 +44,80 @@
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
+
+    /* Location selector overlay */
+    #locationOverlay {
+      background: linear-gradient(135deg, #009688 0%, #00796b 100%);
+    }
+    .location-card {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .location-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .location-card:active {
+      transform: scale(0.98);
+    }
+
+    /* Location dropdown in header */
+    .location-dropdown {
+      position: relative;
+    }
+    .location-dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 0.5rem;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+      z-index: 100;
+      min-width: 220px;
+      display: none;
+    }
+    .location-dropdown-menu.open {
+      display: block;
+    }
+    .location-dropdown-item {
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-size: 0.9rem;
+    }
+    .location-dropdown-item:hover {
+      background: #f3f4f6;
+    }
+    .location-dropdown-item.active {
+      background: #e0f2f1;
+      color: #009688;
+      font-weight: 600;
+    }
+    .location-dropdown-item i {
+      width: 20px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
+
+  <!-- Location Selection Overlay (shown on first visit) -->
+  <div id="locationOverlay" class="absolute inset-0 flex flex-col items-center justify-center z-50 hidden">
+    <div class="text-center mb-8">
+      <i class="fas fa-gamepad text-white text-5xl mb-4 block"></i>
+      <h1 class="text-3xl font-bold text-white mb-2">Arcade Maintenance</h1>
+      <p class="text-white/80 text-lg">Select your location to get started</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-4 max-w-3xl w-full" id="locationGrid">
+      <!-- Location cards will be injected by JS -->
+    </div>
+  </div>
 
   <!-- Top Navigation Bar -->
   <header class="bg-white border-b border-gray-200 shadow-sm z-50">
@@ -54,7 +125,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <i class="fas fa-gamepad text-[#009688] text-2xl"></i>
-          <h1 class="text-lg font-bold text-gray-800">Arcade Maintenance</h1>
+          <h1 class="text-lg font-bold text-gray-800 hidden sm:block">Arcade Maintenance</h1>
         </div>
         <nav class="flex items-center gap-2">
           <button onclick="navigateTo('page1')" data-page="page1" class="nav-btn active px-3 py-1.5 bg-[#009688] text-white rounded-lg text-sm font-medium transition-colors">
@@ -66,6 +137,23 @@
           <button onclick="navigateTo('page3')" data-page="page3" class="nav-btn px-3 py-1.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg text-sm font-medium transition-colors">
             <i class="fas fa-cog mr-1"></i> <span class="hidden sm:inline">Customize</span>
           </button>
+
+          <!-- Location Dropdown -->
+          <div class="location-dropdown">
+            <button onclick="toggleLocationDropdown()" id="locationBtn" class="px-3 py-1.5 bg-teal-50 text-[#009688] border border-[#009688]/30 rounded-lg text-sm font-medium transition-colors hover:bg-teal-100 flex items-center gap-1.5">
+              <i class="fas fa-map-marker-alt"></i>
+              <span id="locationBtnLabel" class="hidden sm:inline">Location</span>
+              <i class="fas fa-chevron-down text-xs ml-0.5"></i>
+            </button>
+            <div id="locationDropdownMenu" class="location-dropdown-menu">
+              <div class="px-3 py-2 bg-gray-50 border-b border-gray-100">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Switch Location</span>
+              </div>
+              <div id="locationDropdownItems">
+                <!-- Items injected by JS -->
+              </div>
+            </div>
+          </div>
         </nav>
       </div>
     </div>
@@ -91,12 +179,47 @@
     </div>
 
     <!-- 3. The Iframe -->
-    <iframe id="appFrame" class="w-full h-full border-none hidden z-10 relative"></iframe>
+    <iframe id="appFrame" class="w-full h-full border-none hidden z-10 relative" allow="clipboard-write; clipboard-read"></iframe>
   </div>
 
 <script>
-    // --- CONFIGURATION ---
-    const GAS_URL = "https://script.google.com/a/macros/fegllc.com/s/AKfycbzTug29poj33g_ObjGNRw6hoVnwsTN7fNZI0CBXs8vApoWjR_tpDHwDEa3PytLuIJXi/exec";
+    // ===========================================
+    // LOCATION CONFIGURATION
+    // Each location has a name, icon, color, and GAS URL.
+    // Update the 'url' field with the actual GAS deployment URL for each location.
+    // ===========================================
+    const LOCATIONS = {
+      'castaway': {
+        name: 'Castaway',
+        icon: 'fa-umbrella-beach',
+        color: '#f59e0b',
+        url: 'https://script.google.com/a/macros/fegllc.com/s/CASTAWAY_GAS_URL_HERE/exec'
+      },
+      'cedar-point': {
+        name: 'Cedar Point',
+        icon: 'fa-flag',
+        color: '#ef4444',
+        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbzTug29poj33g_ObjGNRw6hoVnwsTN7fNZI0CBXs8vApoWjR_tpDHwDEa3PytLuIJXi/exec'
+      },
+      'kalahari': {
+        name: 'Kalahari',
+        icon: 'fa-water',
+        color: '#3b82f6',
+        url: 'https://script.google.com/a/macros/fegllc.com/s/KALAHARI_GAS_URL_HERE/exec'
+      },
+      'great-wolf': {
+        name: 'Great Wolf',
+        icon: 'fa-paw',
+        color: '#8b5cf6',
+        url: 'https://script.google.com/a/macros/fegllc.com/s/GREAT_WOLF_GAS_URL_HERE/exec'
+      },
+      'waldameer': {
+        name: 'Waldameer',
+        icon: 'fa-tree',
+        color: '#10b981',
+        url: 'https://script.google.com/a/macros/fegllc.com/s/WALDAMEER_GAS_URL_HERE/exec'
+      }
+    };
 
     const PATH_TO_PAGE = {
       '/': 'page1',
@@ -111,24 +234,137 @@
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingText = document.getElementById('loadingText');
     const loginOverlay = document.getElementById('loginOverlay');
+    const locationOverlay = document.getElementById('locationOverlay');
 
     // --- STATE ---
     let authTimeout;
     let isAuthenticated = false;
+    let currentLocation = null; // location key from LOCATIONS
+    let GAS_URL = ''; // set dynamically based on location
     const urlParams = new URLSearchParams(window.location.search);
     let currentPage = urlParams.get('page') || PATH_TO_PAGE[window.location.pathname] || 'page1';
 
-    // --- AUTHENTICATION LOGIC ---
+    // ===========================================
+    // LOCATION MANAGEMENT
+    // ===========================================
 
-    // 1. Check if user is already logged in (invisible ping)
+    function getSavedLocation() {
+      try { return localStorage.getItem('selectedLocation'); } catch (e) { return null; }
+    }
+
+    function saveLocation(locationKey) {
+      try { localStorage.setItem('selectedLocation', locationKey); } catch (e) {}
+    }
+
+    function selectLocation(locationKey) {
+      const loc = LOCATIONS[locationKey];
+      if (!loc) return;
+
+      currentLocation = locationKey;
+      GAS_URL = loc.url;
+      saveLocation(locationKey);
+
+      // Update header button label
+      document.getElementById('locationBtnLabel').textContent = loc.name;
+
+      // Update dropdown active state
+      updateLocationDropdown();
+
+      // Hide location overlay if visible
+      locationOverlay.classList.add('hidden');
+
+      // Close dropdown
+      document.getElementById('locationDropdownMenu').classList.remove('open');
+
+      // If already authenticated, reload the page in iframe
+      if (isAuthenticated) {
+        loadPage(currentPage);
+      } else {
+        // Start auth flow
+        checkInitialAuth();
+      }
+    }
+
+    function switchLocation(locationKey) {
+      if (locationKey === currentLocation) {
+        document.getElementById('locationDropdownMenu').classList.remove('open');
+        return;
+      }
+      selectLocation(locationKey);
+    }
+
+    function buildLocationGrid() {
+      const grid = document.getElementById('locationGrid');
+      grid.innerHTML = '';
+
+      Object.keys(LOCATIONS).forEach(key => {
+        const loc = LOCATIONS[key];
+        const card = document.createElement('div');
+        card.className = 'location-card bg-white rounded-2xl p-6 text-center shadow-lg';
+        card.onclick = function() { selectLocation(key); };
+        card.innerHTML = `
+          <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style="background: ${loc.color}20;">
+            <i class="fas ${loc.icon} text-2xl" style="color: ${loc.color};"></i>
+          </div>
+          <h3 class="text-lg font-bold text-gray-800">${loc.name}</h3>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function buildLocationDropdownItems() {
+      const container = document.getElementById('locationDropdownItems');
+      container.innerHTML = '';
+
+      Object.keys(LOCATIONS).forEach(key => {
+        const loc = LOCATIONS[key];
+        const item = document.createElement('div');
+        item.className = 'location-dropdown-item' + (key === currentLocation ? ' active' : '');
+        item.dataset.location = key;
+        item.onclick = function() { switchLocation(key); };
+        item.innerHTML = `<i class="fas ${loc.icon}" style="color: ${loc.color};"></i> ${loc.name}`;
+        container.appendChild(item);
+      });
+    }
+
+    function updateLocationDropdown() {
+      document.querySelectorAll('.location-dropdown-item').forEach(item => {
+        if (item.dataset.location === currentLocation) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    }
+
+    function toggleLocationDropdown() {
+      const menu = document.getElementById('locationDropdownMenu');
+      menu.classList.toggle('open');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      const dropdown = document.querySelector('.location-dropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        document.getElementById('locationDropdownMenu').classList.remove('open');
+      }
+    });
+
+    // ===========================================
+    // AUTHENTICATION LOGIC
+    // ===========================================
+
     function checkInitialAuth() {
+      if (!GAS_URL) return;
+
+      loadingText.textContent = 'Verifying secure session...';
+      loadingOverlay.classList.remove('hidden');
+
       const pingFrame = document.createElement('iframe');
       pingFrame.style.display = 'none';
       pingFrame.src = `${GAS_URL}?page=authCheck`;
       document.body.appendChild(pingFrame);
 
-      // If no response in 3.5s, assume JumpCloud blocked it -> Show Login
-      // (Note: The red CSP error in the console here is EXPECTED and NORMAL)
       authTimeout = setTimeout(() => {
         loadingOverlay.classList.add('hidden');
         loginOverlay.classList.remove('hidden');
@@ -136,17 +372,15 @@
       }, 3500);
     }
 
-    // 2. Listen for messages from iframe (auth + storage relay)
+    // Listen for messages from iframe (auth + storage relay)
     window.addEventListener('message', function(event) {
-      // Auth success message
       if (event.data === 'auth_success') {
         clearTimeout(authTimeout);
         proceedToApp();
         return;
       }
 
-      // Storage relay: iframe can't reliably use localStorage (3rd-party context).
-      // We relay storage operations through the parent (GitHub Pages, 1st-party).
+      // Storage relay
       const data = event.data;
       if (!data || typeof data !== 'object' || !data.type) return;
 
@@ -164,8 +398,9 @@
       }
     });
 
-    // 3. Open Popup for Login & Watch it close
     function openAuthPopup() {
+      if (!GAS_URL) return;
+
       const popupWidth = 500;
       const popupHeight = 600;
       const left = (window.innerWidth / 2) - (popupWidth / 2);
@@ -177,7 +412,6 @@
         `width=${popupWidth},height=${popupHeight},top=${top},left=${left}`
       );
 
-      // Watch the popup window. When it closes, we assume authentication was successful.
       const pollTimer = setInterval(() => {
         if (authWindow && authWindow.closed) {
           clearInterval(pollTimer);
@@ -186,14 +420,15 @@
       }, 500);
     }
 
-    // 4. Triggered when auth is successful
     function proceedToApp() {
       isAuthenticated = true;
       loginOverlay.classList.add('hidden');
       loadPage(currentPage);
     }
 
-    // --- NAVIGATION LOGIC ---
+    // ===========================================
+    // NAVIGATION LOGIC
+    // ===========================================
 
     function updateNav() {
       document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -206,16 +441,16 @@
     }
 
     function loadPage(pageName) {
-      if (!isAuthenticated) return; // Don't try to load if not logged in
+      if (!isAuthenticated || !GAS_URL) return;
 
-      loadingText.textContent = "Loading Arcade Maintenance...";
+      const locName = LOCATIONS[currentLocation] ? LOCATIONS[currentLocation].name : '';
+      loadingText.textContent = `Loading ${locName}...`;
       loadingOverlay.classList.remove('hidden');
       iframe.classList.add('hidden');
 
       iframe.src = GAS_URL + '?page=' + pageName;
     }
 
-    // Hide loading overlay when iframe finishes loading
     iframe.addEventListener('load', function() {
       if (isAuthenticated && iframe.src.includes('page=')) {
         loadingOverlay.classList.add('hidden');
@@ -240,27 +475,40 @@
       loadPage(currentPage);
     });
 
-    // --- INITIALIZATION ---
+    // ===========================================
+    // INITIALIZATION
+    // ===========================================
     document.addEventListener('DOMContentLoaded', function() {
       updateNav();
+      buildLocationGrid();
+      buildLocationDropdownItems();
 
-      // Start the Auth Check flow
-      checkInitialAuth();
+      // Check if user has a saved location
+      const savedLoc = getSavedLocation();
 
-      // PWA Service Worker (Errors here are harmless to the auth flow)
+      if (savedLoc && LOCATIONS[savedLoc]) {
+        // Returning user — use saved location, go straight to auth
+        selectLocation(savedLoc);
+      } else {
+        // First visit — show location picker
+        loadingOverlay.classList.add('hidden');
+        locationOverlay.classList.remove('hidden');
+      }
+
+      // PWA Service Worker
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/service-worker.js').then((registration) => {
-            registration.addEventListener('updatefound', () => {
-              const newWorker = registration.installing;
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  if (confirm('A new version is available. Reload to update?')) {
-                    window.location.reload();
-                  }
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                if (confirm('A new version is available. Reload to update?')) {
+                  window.location.reload();
                 }
-              });
+              }
             });
-          }).catch(console.error);
+          });
+        }).catch(console.error);
       }
     });
   </script>
