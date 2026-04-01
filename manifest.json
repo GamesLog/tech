@@ -2,7 +2,7 @@
   "name": "Arcade Maintenance",
   "short_name": "TechReport",
   "description": "Arcade maintenance log and tracking system",
-  "start_url": "/cedartech",
+  "start_url": "/tech",
   "id": "/",
   "display": "standalone",
   "background_color": "#f3f4f6",
