@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arcade-maint-v18';
+const CACHE_NAME = 'arcade-maint-v19';
 const OFFLINE_URL = '/offline.html';
 
 // Assets to cache immediately on install
