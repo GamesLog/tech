@@ -329,14 +329,9 @@
       // Close dropdown
       document.getElementById('locationDropdownMenu').classList.remove('open');
 
-      // If already authenticated, reload the page in iframe
-      if (isAuthenticated) {
-        loadPage(currentPage);
-      } else {
-        // Start auth flow
-        checkInitialAuth();
-      }
-    }
+  // Redirect the main tab to GAS — no iframe
+  window.location.href = loc.url + '?page=page1';
+}
 
     function switchLocation(locationKey) {
       if (locationKey === currentLocation) {
