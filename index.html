@@ -219,31 +219,31 @@
         name: 'Castaway',
         icon: 'fa-umbrella-beach',
         color: '#f59e0b',
-        url: 'https://script.google.com/macros/s/AKfycbx6mESPNTmCLbznOoYEat__jMFHJSqrdO43q8Eoa4NkVHZXfFvhV6liSQwuXIRig0Bc/exec'
+        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbxgefN9jRebR4shNSJvqZTLsdLvUT3wzWp_4QFGsms9JkZexUg6s-Grb-hl9J9BvBEh/exec'
       },
       'cedar-point': {
         name: 'Cedar Point',
         icon: 'fa-flag',
         color: '#ef4444',
-        url: 'https://script.google.com/macros/s/AKfycbxqnEX3pNLEE4u57UZ7OYUpTk1Vy1c6W1GrpIzST9hZUWE7yduudRSTaaJK0_LH-VD5/exec'
+        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbzd4RP_jynX00N0QWorH4AVLYLRLPMRcgeFa7g8cXB2jMsqntRSPNsNAzYe4rP5vIPd/exec'
       },
       'kalahari': {
         name: 'Kalahari',
         icon: 'fa-water',
         color: '#3b82f6',
-        url: 'https://script.google.com/macros/s/AKfycbx43T3mvFhYVfgONMk6NZ09M9i1QdnPUoLZic6ny5UAqYwFpdpTZHV11mG1Mw1Ke58C/exec'
+        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbxS0LAYkCEx3nHxG5V3i3K_0H3YCdSyGFqqNQWYOs_-Cwbx9Fcu2cYaVsBUBQX0Yi3f/exec'
       },
       'great-wolf': {
         name: 'Great Wolf',
         icon: 'fa-paw',
         color: '#8b5cf6',
-        url: 'https://script.google.com/macros/s/AKfycbzox7nUoT1DeT7Tn_F4WC7-m8lCtngciI2DP1AaoRKzxjGKY70j4Kd33oQ0RoHA9wul/exec'
+        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbz7kRv3roEtcPBF0gGB0PX8a7p9ufSco9bJjoTGji3N0dtJe66wCUY3ekJP-jC0RdVH/exec'
       },
       'waldameer': {
         name: 'Waldameer',
         icon: 'fa-tree',
         color: '#10b981',
-        url: 'https://script.google.com/macros/s/AKfycby3zOpK7N_6zDktVQVrZ4slR-9C8ZZ8V-AL-VtT-HA3aiP4BIvwQShTERMj-OnZY7ZBwg/exec'
+        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbzwfRkvN2i-Hp-SmR_aYgkPGG_98pEwLcQrk7nbV1cLcxzVtVfVnXqX7lzatCZhpKD_Zg/exec'
       }
     };
 
@@ -329,9 +329,14 @@
       // Close dropdown
       document.getElementById('locationDropdownMenu').classList.remove('open');
 
-  // Redirect the main tab to GAS — no iframe
-  window.location.href = loc.url + '?page=page1';
-}
+      // If already authenticated, reload the page in iframe
+      if (isAuthenticated) {
+        loadPage(currentPage);
+      } else {
+        // Start auth flow
+        checkInitialAuth();
+      }
+    }
 
     function switchLocation(locationKey) {
       if (locationKey === currentLocation) {
