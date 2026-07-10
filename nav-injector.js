@@ -110,6 +110,19 @@
     return null;
   }
 
+  // Detect current page from URL ?page= parameter
+  function detectCurrentPage() {
+    var params = new URLSearchParams(window.location.search);
+    return params.get('page') || 'page1';
+  }
+
+  // Build a URL for the current GAS deployment with a different page param
+  function buildPageUrl(pageName) {
+    var url = new URL(window.location.href);
+    url.searchParams.set('page', pageName);
+    return url.toString();
+  }
+
   function populateNav(nav, config) {
     var currentKey = detectCurrentLocation(config);
     var currentLoc = currentKey ? config.locations[currentKey] : null;
@@ -161,8 +174,34 @@
         '</div>';
     });
 
+    // --- Page nav buttons (Home / Dashboard / Customize) ---
+    var currentPage = detectCurrentPage();
+    var pageButtons = [
+      { key: 'page1', label: 'Home', icon: 'fa-home' },
+      { key: 'dashboard', label: 'Dashboard', icon: 'fa-chart-line' },
+      { key: 'page3', label: 'Customize', icon: 'fa-cog' }
+    ];
+    var pageNavHtml = '';
+    pageButtons.forEach(function (btn) {
+      var isActive = currentPage === btn.key;
+      pageNavHtml +=
+        '<button type="button" class="arcade-nav-page-btn" data-page-key="' + btn.key + '" style="' +
+        'display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;font-size:13px;' +
+        'font-weight:500;cursor:pointer;white-space:nowrap;border:1px solid transparent;transition:all 0.15s;' +
+        (isActive
+          ? 'background:#009688;color:#fff;border-color:#009688;'
+          : 'background:#f3f4f6;color:#374151;border-color:#e5e7eb;') +
+        '">' +
+        '<i class="fas ' + btn.icon + '"></i>' +
+        '<span class="arcade-nav-page-label">' + btn.label + '</span>' +
+        '</button>';
+    });
+
     var rightHtml =
       '<div style="display:flex;align-items:center;gap:8px;">' +
+
+      // Page nav buttons
+      pageNavHtml +
 
       // Resources dropdown
       '<div id="arcade-nav-res-wrap" style="position:relative;">' +
@@ -279,20 +318,42 @@
       });
     });
 
+    // Page nav buttons — navigate within current GAS deployment
+    var pageBtns = nav.querySelectorAll('.arcade-nav-page-btn');
+    pageBtns.forEach(function (btn) {
+      btn.addEventListener('mouseenter', function () {
+        if (!this.classList.contains('active')) {
+          this.style.background = '#e5e7eb';
+        }
+      });
+      btn.addEventListener('mouseleave', function () {
+        if (this.style.background !== 'rgb(0, 150, 136)') {
+          this.style.background = this.dataset.active ? '#009688' : '#f3f4f6';
+        }
+      });
+      btn.addEventListener('click', function () {
+        var pageKey = this.getAttribute('data-page-key');
+        window.location.href = buildPageUrl(pageKey);
+      });
+    });
+
     // --- Responsive: hide labels on small screens ---
     function handleResize() {
       var w = window.innerWidth;
       var titleSpan = nav.querySelector('.arcade-nav-title');
       var locLabel = nav.querySelector('.arcade-nav-loc-label');
       var resLabel = nav.querySelector('.arcade-nav-res-label');
-      if (w < 640) {
+      var pageLabels = nav.querySelectorAll('.arcade-nav-page-label');
+      if (w < 768) {
         if (titleSpan) titleSpan.style.display = 'none';
         if (locLabel) locLabel.style.display = 'none';
         if (resLabel) resLabel.style.display = 'none';
+        pageLabels.forEach(function (l) { l.style.display = 'none'; });
       } else {
         if (titleSpan) titleSpan.style.display = '';
         if (locLabel) locLabel.style.display = '';
         if (resLabel) resLabel.style.display = '';
+        pageLabels.forEach(function (l) { l.style.display = ''; });
       }
     }
     handleResize();
