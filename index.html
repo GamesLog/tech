@@ -219,31 +219,31 @@
         name: 'Castaway',
         icon: 'fa-umbrella-beach',
         color: '#f59e0b',
-        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbz-e8bwqIxF6KBYxInI6NLbE89Dytk-wFBZQK4JJHoKE_H7OP4zGE7zVhO-a60fOcjT/exec'
+        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbwCOH_r3r6NJ8gw4dry9hyQYoXVNPvVsDECfDd0WeMEvVL43zqXAKpqqRRCJns9XPCH/exec'
       },
       'cedar-point': {
         name: 'Cedar Point',
         icon: 'fa-flag',
         color: '#ef4444',
-        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbwG1y808tf5OiIb3CkJUs4yl4XvzLgRFmmn8lEP8utRNRbNDpDQSTuDdgxTr6ddYdFp/exec'
+        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbzsLVb8ppN9XyCvddtFCrrM_fALk_58ahdU78h6ALlo8bxGaBmLyK7vUkt4AP_4IdX6/exec'
       },
       'kalahari': {
         name: 'Kalahari',
         icon: 'fa-water',
         color: '#3b82f6',
-        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbwJrGiaeFUcfXr4iuPpb-EdI8sgfelILoTD3R-iiY66Bzk5ItuVg8sD_zbygO3C9-zF/exec'
+        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbxZDRzVFCafSDP1Cl7Gzj889yuLa8abHI2eVbN04DttDP6Zz8n7daDHWu7e8D0mW8LC/exec'
       },
       'great-wolf': {
         name: 'Great Wolf',
         icon: 'fa-paw',
         color: '#8b5cf6',
-        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbyY6hBH4c6tFrA4b09BjUBALyz0ckyMHJhchurcuXM4-ea6yHe99p3rgkaZTKHk96bS/exec'
+        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbwbnOMepMmNUYuyNUK2j544hmZBQi8R1NCCnCRgYW4X8uQ7G6qQDJKIBXN9AV3uriBD/exec'
       },
       'waldameer': {
         name: 'Waldameer',
         icon: 'fa-tree',
         color: '#10b981',
-        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbxsPk-RXiH_F8y36wI9zMaP_goamB2VhMIawnS0V9lliZgnwr2FKNjhSmJZy0RmkHgQ6w/exec'
+        url: 'https://script.google.com/a/macros/fegllc.com/s/AKfycbwEEBnigouAfQtA4P4AJt79VjEbh_IURf1_U1VGQ7FHMIMBPUK9CW28MrYSvDjR-E1d/exec'
       }
     };
 
@@ -329,9 +329,14 @@
       // Close dropdown
       document.getElementById('locationDropdownMenu').classList.remove('open');
 
-  // Redirect the main tab to GAS — no iframe
-  window.location.href = loc.url + '?page=page1';
-}
+      // If already authenticated, reload the page in iframe
+      if (isAuthenticated) {
+        loadPage(currentPage);
+      } else {
+        // Start auth flow
+        checkInitialAuth();
+      }
+    }
 
     function switchLocation(locationKey) {
       if (locationKey === currentLocation) {
